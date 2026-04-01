@@ -1,0 +1,5 @@
+{
+  "name": "ClearMark",
+  "description": "A client-side video watermark removal tool using FFmpeg.wasm.",
+  "requestFramePermissions": []
+}
