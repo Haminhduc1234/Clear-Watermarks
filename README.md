@@ -34,14 +34,7 @@ cd VIDEO-WATERMARK-REMOVER
 npm install
 ```
 
-3. Configure environment variables:
-   - Copy `.env.local.example` to `.env.local` (if it exists)
-   - Set your `GEMINI_API_KEY` in [.env.local](.env.local)
-   ```bash
-   GEMINI_API_KEY=your_api_key_here
-   ```
-
-4. Run the application:
+3. Run the application:
 ```bash
 npm run dev
 ```
@@ -53,7 +46,6 @@ The application will start and be accessible in your browser.
 - **Language**: TypeScript (98.3%)
 - **Frontend**: HTML & CSS (1.7%)
 - **Runtime**: Node.js
-- **API Integration**: Gemini API for AI-powered processing
 
 ## 🎯 Usage
 
@@ -84,16 +76,6 @@ await remover.processVideo('input.mp4', 'output.mp4', options);
 - `npm run dev` - Start the development server
 - `npm run build` - Build the project for production
 - `npm run start` - Run the built application
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GEMINI_API_KEY` | API key for Gemini AI service | Yes |
-| `NODE_ENV` | Environment (development/production) | No |
-| `PORT` | Server port (default: 3000) | No |
 
 ## 📚 Documentation
 
