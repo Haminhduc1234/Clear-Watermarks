@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="300" alt="ClearMark - Remove Video Watermarks Locally" src="https://images.unsplash.com/photo-1611339555312-e607c04352fd?w=1200&h=300&fit=crop" />
+<img width="1200" height="300" alt="ClearMark - Remove Video Watermarks Locally" src="https://raw.githubusercontent.com/senaiverse/VIDEO-WATERMARK-REMOVER/main/src/image.png" />
 </div>
 
 # 🎬 Video Watermark Remover
