@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="300" alt="ClearMark - Remove Video Watermarks Locally" src="https://raw.githubusercontent.com/senaiverse/VIDEO-WATERMARK-REMOVER/main/src/image.png" />
-</div>
-
 # 🎬 Video Watermark Remover
 
 A powerful TypeScript-based application that intelligently removes watermarks from video files using advanced AI and image processing techniques.
