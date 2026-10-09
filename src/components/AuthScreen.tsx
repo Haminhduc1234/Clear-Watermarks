@@ -83,8 +83,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         }
       } else {
         // Mode: Register
-        // Ưu tiên gọi API backend admin để tạo user với email_confirm: true,
-        // giúp bỏ qua hoàn toàn việc gửi email xác thực và tránh lỗi email rate limit!
+        // Ưu tiên gọi API backend admin nếu có hỗ trợ
         let registeredSuccess = false;
         try {
           const res = await fetch('/api/admin/register', {
@@ -92,14 +91,23 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
           });
-          const apiData = await res.json();
-          if (res.ok && apiData.success) {
-            registeredSuccess = true;
-          } else if (apiData.message && !apiData.missingServiceKey) {
-            throw new Error(apiData.message);
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const apiData = await res.json();
+            if (res.ok && apiData.success) {
+              registeredSuccess = true;
+            } else if (apiData.message && !apiData.missingServiceKey) {
+              throw new Error(apiData.message);
+            }
           }
         } catch (apiErr: any) {
-          if (apiErr.message && !apiErr.message.includes('Chưa cấu hình SUPABASE_SERVICE_ROLE_KEY')) {
+          // Chỉ throw nếu là lỗi nghiệp vụ xác thực rõ ràng từ server
+          if (
+            apiErr.message &&
+            !apiErr.message.includes('Chưa cấu hình SUPABASE_SERVICE_ROLE_KEY') &&
+            !apiErr.message.includes('JSON') &&
+            !apiErr.message.includes('token')
+          ) {
             throw apiErr;
           }
         }
