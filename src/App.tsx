@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { Upload, Download, Play, Pause, Volume2, VolumeX, Trash2, Wand2, Loader2, RotateCcw, Video, Zap, Sparkles, Blend, Layers, Eye, EyeOff, Sliders, Image as ImageIcon, Check, X, LogOut } from 'lucide-react';
+import { Upload, Download, Play, Pause, Volume2, VolumeX, Trash2, Wand2, Loader2, RotateCcw, Video, Zap, Sparkles, Blend, Layers, Eye, EyeOff, Sliders, Image as ImageIcon, Check, X, LogOut, Users } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { User } from './types/auth';
 import AuthScreen from './components/AuthScreen';
+import AdminUsersModal from './components/AdminUsersModal';
 import { getSupabase, mapSupabaseUser, isUserApproved } from './lib/supabase';
 
 interface Rect {
@@ -21,6 +22,7 @@ export default function App() {
   // Authentication states
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+  const [showAdminModal, setShowAdminModal] = useState<boolean>(false);
 
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -877,6 +879,20 @@ export default function App() {
             </span>
           )}
 
+          {/* Admin User Management Button */}
+          {currentUser.role === 'admin' && (
+            <button
+              type="button"
+              onClick={() => setShowAdminModal(true)}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition-all cursor-pointer shadow-2xs"
+              title="Quản lý và phê duyệt tài khoản người dùng"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Quản lý duyệt User</span>
+              <span className="sm:hidden">Duyệt User</span>
+            </button>
+          )}
+
           {/* User Profile Chip & Logout */}
           <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-gray-200">
             <div className="flex items-center gap-1.5">
@@ -1620,6 +1636,14 @@ export default function App() {
           </div>
         )}
       </main>
+      {/* Admin Users Management Modal */}
+      {currentUser.role === 'admin' && (
+        <AdminUsersModal
+          isOpen={showAdminModal}
+          onClose={() => setShowAdminModal(false)}
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 }
