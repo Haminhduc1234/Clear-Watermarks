@@ -16,7 +16,8 @@ import type { User } from '../types/auth';
 import {
   getSupabase,
   isSupabaseConfigured,
-  mapSupabaseUser
+  mapSupabaseUser,
+  isUserApproved
 } from '../lib/supabase';
 
 interface AuthScreenProps {
@@ -63,20 +64,32 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           throw loginError;
         }
 
-        if (data.user && data.session) {
-          const appUser = mapSupabaseUser(data.user);
-          onAuthSuccess(appUser, data.session.access_token);
-        } else {
-          throw new Error('Không thể khởi tạo phiên đăng nhập.');
+        if (data.user) {
+          // Kiểm tra xem tài khoản đã được Admin duyệt trên Supabase chưa
+          if (!isUserApproved(data.user)) {
+            await supabase.auth.signOut();
+            setError(
+              'Tài khoản của bạn CHƯA ĐƯỢC ADMIN DUYỆT trên Supabase. Vui lòng liên hệ Quản trị viên để kích hoạt tài khoản.'
+            );
+            return;
+          }
+
+          if (data.session) {
+            const appUser = mapSupabaseUser(data.user);
+            onAuthSuccess(appUser, data.session.access_token);
+          } else {
+            throw new Error('Không thể khởi tạo phiên đăng nhập.');
+          }
         }
       } else {
-        // Mode: Register
+        // Mode: Register - Tạo tài khoản với cờ is_approved: false
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
             data: {
               name: name.trim() || undefined,
+              is_approved: false, // Mặc định chưa duyệt, cần Admin config
             },
           },
         });
@@ -85,17 +98,14 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           throw signUpError;
         }
 
-        if (data.session && data.user) {
-          // Auto-login if email confirmation is disabled
-          const appUser = mapSupabaseUser(data.user);
-          onAuthSuccess(appUser, data.session.access_token);
-        } else if (data.user) {
-          // Email confirmation is required
-          setInfoMessage(
-            'Tài khoản đã tạo thành công! Vui lòng kiểm tra email để kích hoạt tài khoản (hoặc tắt Confirm email trong Supabase Console).'
-          );
-          setMode('login');
-        }
+        // Đảm bảo đăng xuất ngay lập tức để không vào được app khi chưa được Admin duyệt
+        await supabase.auth.signOut();
+
+        setInfoMessage(
+          'Đăng ký thành công! Tài khoản đang ở trạng thái CHỜ DUYỆT. Vui lòng liên hệ Admin kích hoạt trên Supabase để có thể đăng nhập.'
+        );
+        setMode('login');
+        setPassword('');
       }
     } catch (err: any) {
       console.error('Supabase Auth error:', err);

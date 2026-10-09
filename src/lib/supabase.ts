@@ -28,6 +28,34 @@ export function getSupabase(): SupabaseClient | null {
   return supabaseClientInstance;
 }
 
+/**
+ * Kiểm tra tài khoản đã được Admin phê duyệt trên Supabase hay chưa.
+ * Admin phê duyệt bằng cách đặt "is_approved": true (hoặc "approved": true / "role": "admin")
+ * trong User app_metadata hoặc user_metadata trên Supabase Console.
+ */
+export function isUserApproved(user: SupabaseUser): boolean {
+  const appMeta = (user.app_metadata || {}) as Record<string, any>;
+  const userMeta = (user.user_metadata || {}) as Record<string, any>;
+  const email = (user.email || '').toLowerCase();
+
+  // Tài khoản Admin được tự động duyệt
+  if (email.startsWith('admin@') || appMeta.role === 'admin' || userMeta.role === 'admin') {
+    return true;
+  }
+
+  // Kiểm tra cờ duyệt từ app_metadata (an toàn nhất, chỉ Admin Supabase sửa được)
+  if (appMeta.is_approved === true || appMeta.approved === true || appMeta.status === 'approved') {
+    return true;
+  }
+
+  // Kiểm tra cờ duyệt nếu Admin chỉnh sửa trong user_metadata
+  if (userMeta.is_approved === true || userMeta.approved === true || userMeta.status === 'approved') {
+    return true;
+  }
+
+  return false;
+}
+
 export function mapSupabaseUser(user: SupabaseUser): User {
   const meta = (user.user_metadata || {}) as Record<string, any>;
   const email = user.email || '';
@@ -41,6 +69,7 @@ export function mapSupabaseUser(user: SupabaseUser): User {
     name,
     email,
     role,
+    isApproved: isUserApproved(user),
     createdAt: user.created_at || new Date().toISOString(),
   };
 }

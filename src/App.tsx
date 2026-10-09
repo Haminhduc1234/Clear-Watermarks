@@ -5,7 +5,7 @@ import { Upload, Download, Play, Pause, Volume2, VolumeX, Trash2, Wand2, Loader2
 import { cn } from './lib/utils';
 import type { User } from './types/auth';
 import AuthScreen from './components/AuthScreen';
-import { getSupabase, mapSupabaseUser } from './lib/supabase';
+import { getSupabase, mapSupabaseUser, isUserApproved } from './lib/supabase';
 
 interface Rect {
   x: number;
@@ -778,9 +778,12 @@ export default function App() {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+      if (session?.user && isUserApproved(session.user)) {
         setCurrentUser(mapSupabaseUser(session.user));
       } else {
+        if (session?.user && !isUserApproved(session.user)) {
+          supabase.auth.signOut().catch(() => {});
+        }
         setCurrentUser(null);
       }
       setIsAuthChecking(false);
@@ -790,9 +793,12 @@ export default function App() {
 
     // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
+      if (session?.user && isUserApproved(session.user)) {
         setCurrentUser(mapSupabaseUser(session.user));
       } else {
+        if (session?.user && !isUserApproved(session.user)) {
+          supabase.auth.signOut().catch(() => {});
+        }
         setCurrentUser(null);
       }
     });
