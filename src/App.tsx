@@ -474,22 +474,6 @@ export default function App() {
     }
 
     ctx.restore();
-
-    // Outline around watermark region
-    ctx.save();
-    ctx.strokeStyle = mode === 'smooth' ? '#3b82f6' : mode === 'blur' ? '#8b5cf6' : '#10b981';
-    ctx.lineWidth = Math.max(1.5, vw / 450);
-    ctx.setLineDash([5, 3]);
-    ctx.strokeRect(x, y, w, h);
-    ctx.restore();
-
-    const label = mode === 'smooth'
-      ? `✨ Preview: Hòa trộn (${level === 'low' ? 'Nhẹ' : level === 'high' ? 'Mạnh' : 'Vừa'})`
-      : mode === 'blur'
-        ? `🌫️ Preview: Làm mờ (${level === 'low' ? 'Nhẹ' : level === 'high' ? 'Mạnh' : 'Vừa'})`
-        : '🎯 Preview: Delogo';
-
-    drawBadge(ctx, x, y, label, 'rgba(15, 23, 42, 0.88)', vw);
   };
 
   // Main canvas render function with live preview for Inpaint + Custom Logo
@@ -784,7 +768,7 @@ export default function App() {
         setCurrentUser(mapSupabaseUser(session.user));
       } else {
         if (session?.user && !isUserApproved(session.user)) {
-          supabase.auth.signOut().catch(() => {});
+          supabase.auth.signOut().catch(() => { });
         }
         setCurrentUser(null);
       }
@@ -799,7 +783,7 @@ export default function App() {
         setCurrentUser(mapSupabaseUser(session.user));
       } else {
         if (session?.user && !isUserApproved(session.user)) {
-          supabase.auth.signOut().catch(() => {});
+          supabase.auth.signOut().catch(() => { });
         }
         setCurrentUser(null);
       }
