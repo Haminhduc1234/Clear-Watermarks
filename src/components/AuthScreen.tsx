@@ -82,24 +82,48 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           }
         }
       } else {
-        // Mode: Register - Tạo tài khoản với cờ is_approved: false
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              name: name.trim() || undefined,
-              is_approved: false, // Mặc định chưa duyệt, cần Admin config
-            },
-          },
-        });
-
-        if (signUpError) {
-          throw signUpError;
+        // Mode: Register
+        // Ưu tiên gọi API backend admin để tạo user với email_confirm: true,
+        // giúp bỏ qua hoàn toàn việc gửi email xác thực và tránh lỗi email rate limit!
+        let registeredSuccess = false;
+        try {
+          const res = await fetch('/api/admin/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
+          });
+          const apiData = await res.json();
+          if (res.ok && apiData.success) {
+            registeredSuccess = true;
+          } else if (apiData.message && !apiData.missingServiceKey) {
+            throw new Error(apiData.message);
+          }
+        } catch (apiErr: any) {
+          if (apiErr.message && !apiErr.message.includes('Chưa cấu hình SUPABASE_SERVICE_ROLE_KEY')) {
+            throw apiErr;
+          }
         }
 
-        // Đảm bảo đăng xuất ngay lập tức để không vào được app khi chưa được Admin duyệt
-        await supabase.auth.signOut();
+        if (!registeredSuccess) {
+          // Fallback tới supabase.auth.signUp nếu chưa cấu hình backend service key
+          const { error: signUpError } = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: {
+              data: {
+                name: name.trim() || undefined,
+                is_approved: false, // Mặc định chưa duyệt, cần Admin config
+              },
+            },
+          });
+
+          if (signUpError) {
+            throw signUpError;
+          }
+
+          // Đảm bảo đăng xuất ngay lập tức
+          await supabase.auth.signOut();
+        }
 
         setInfoMessage(
           'Đăng ký thành công! Tài khoản đang ở trạng thái CHỜ DUYỆT. Vui lòng liên hệ Admin kích hoạt trên Supabase để có thể đăng nhập.'
@@ -112,10 +136,12 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       let msg = err.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.';
       if (msg.includes('Invalid login credentials')) {
         msg = 'Email hoặc mật khẩu không chính xác.';
-      } else if (msg.includes('User already registered')) {
+      } else if (msg.includes('User already registered') || msg.includes('already been registered')) {
         msg = 'Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập.';
       } else if (msg.includes('Password should be at least')) {
         msg = 'Mật khẩu phải có ít nhất 6 ký tự.';
+      } else if (msg.includes('over_email_send_rate_limit') || msg.includes('rate limit exceeded')) {
+        msg = 'Supabase đang bật gửi email xác thực và bị vượt quá giới hạn gửi thư. Vui lòng tắt tùy chọn "Confirm email" trong Supabase Console > Authentication > Providers > Email để không gửi email nữa.';
       }
       setError(msg);
     } finally {

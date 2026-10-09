@@ -194,6 +194,54 @@ export function viteAdminPlugin(): Plugin {
           }
         }
 
+        // Handle POST /api/admin/register (Đăng ký tài khoản không gửi email xác thực, chờ admin duyệt)
+        if (url === '/api/admin/register' && req.method === 'POST') {
+          try {
+            const body = await readBody();
+            const { email, password, name } = body;
+
+            if (!email || !password) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ success: false, message: 'Vui lòng cung cấp email và mật khẩu' }));
+              return;
+            }
+
+            // Tạo user bằng Supabase Admin với email_confirm: true để bỏ qua bước gửi email
+            const { data, error } = await adminClient.auth.admin.createUser({
+              email: email.trim(),
+              password: password,
+              email_confirm: true, // Không gửi email xác thực, không bị rate limit
+              user_metadata: {
+                name: name?.trim() || undefined,
+                is_approved: false, // Chờ admin duyệt
+              },
+              app_metadata: {
+                is_approved: false,
+              },
+            });
+
+            if (error) {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ success: false, message: error.message }));
+              return;
+            }
+
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                success: true,
+                message: 'Đăng ký thành công, đang chờ Admin duyệt',
+                user: data.user,
+              })
+            );
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, message: err.message }));
+            return;
+          }
+        }
+
         res.statusCode = 404;
         res.end(JSON.stringify({ success: false, message: 'Route không tồn tại' }));
       });
