@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { Upload, Download, Play, Pause, Volume2, VolumeX, Trash2, Wand2, Loader2, RotateCcw, Video, Zap, Sparkles, Blend, Layers, Eye, EyeOff, Sliders, Image as ImageIcon, Check, X } from 'lucide-react';
+import { Upload, Download, Play, Pause, Volume2, VolumeX, Trash2, Wand2, Loader2, RotateCcw, Video, Zap, Sparkles, Blend, Layers, Eye, EyeOff, Sliders, Image as ImageIcon, Check, X, LogOut } from 'lucide-react';
 import { cn } from './lib/utils';
+import type { User } from './types/auth';
+import AuthScreen from './components/AuthScreen';
+import { getSupabase, mapSupabaseUser } from './lib/supabase';
 
 interface Rect {
   x: number;
@@ -15,6 +18,10 @@ type BlendMode = 'smooth' | 'blur' | 'delogo';
 type SmoothLevel = 'low' | 'medium' | 'high';
 
 export default function App() {
+  // Authentication states
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [outputUrl, setOutputUrl] = useState<string | null>(null);
@@ -539,14 +546,6 @@ export default function App() {
         logoScale,
         logoOpacity
       );
-      drawBadge(
-        ctx,
-        14,
-        14,
-        `🏷️ Watermark riêng: ${logoScale}% size • ${logoOpacity}% mờ (Đè chính giữa logo cũ)`,
-        'rgba(99, 102, 241, 0.92)',
-        canvas.width
-      );
     }
   }, [
     rect,
@@ -770,6 +769,74 @@ export default function App() {
     setIsHoldingCompare(false);
   };
 
+  // Check Supabase login session on mount
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setIsAuthChecking(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setCurrentUser(mapSupabaseUser(session.user));
+      } else {
+        setCurrentUser(null);
+      }
+      setIsAuthChecking(false);
+    }).catch(() => {
+      setIsAuthChecking(false);
+    });
+
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser(mapSupabaseUser(session.user));
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleAuthSuccess = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = async () => {
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    }
+    setCurrentUser(null);
+    startOver();
+  };
+
+  // Auth Gate: Show loading during session verification
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4">
+        <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20">
+          <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
+        </div>
+        <p className="text-sm font-semibold text-slate-200">Đang xác thực phiên đăng nhập...</p>
+        <p className="text-xs text-slate-500 mt-1">Hệ thống bảo mật ClearMark</p>
+      </div>
+    );
+  }
+
+  // Auth Gate: Require login to access any application features
+  if (!currentUser) {
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       {/* Sticky Header */}
@@ -787,27 +854,53 @@ export default function App() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
           {ffmpegLoaded ? (
-            <span className="text-[11px] sm:text-xs font-semibold px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/80 rounded-full flex items-center gap-1.5 shadow-2xs">
+            <span className="text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/80 rounded-full flex items-center gap-1.5 shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              Engine Ready
+              <span className="hidden sm:inline">Engine Ready</span>
             </span>
           ) : loadError ? (
-            <span className="text-[11px] sm:text-xs font-semibold px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full">
+            <span className="text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full">
               Engine Error
             </span>
           ) : (
-            <span className="text-[11px] sm:text-xs font-medium px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full flex items-center gap-1.5">
+            <span className="text-[11px] sm:text-xs font-medium px-2 sm:px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full flex items-center gap-1.5">
               <Loader2 className="w-3 h-3 animate-spin text-yellow-600" />
               <span className="hidden sm:inline">Đang nạp</span> Engine...
             </span>
           )}
+
+          {/* User Profile Chip & Logout */}
+          <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-gray-200">
+            <div className="flex items-center gap-1.5">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div className="hidden md:block text-left">
+                <div className="text-xs font-bold text-gray-900 leading-tight truncate max-w-[120px]">
+                  {currentUser.name}
+                </div>
+                <div className="text-[10px] text-gray-500 capitalize leading-tight">
+                  {currentUser.role === 'admin' ? 'Quản trị viên' : 'Thành viên'}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-1.5 sm:p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              title="Đăng xuất khỏi tài khoản"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 md:py-8">
+      <main className="max-w-8xl mx-auto px-3 sm:px-6 py-4 sm:py-6 md:py-8">
         {!videoUrl ? (
           /* Upload Screen */
           <div className="max-w-3xl mx-auto mt-4 sm:mt-8 md:mt-12">
