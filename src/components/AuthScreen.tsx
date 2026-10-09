@@ -69,7 +69,7 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           if (!isUserApproved(data.user)) {
             await supabase.auth.signOut();
             setError(
-              'Tài khoản của bạn CHƯA ĐƯỢC ADMIN DUYỆT trên Supabase. Vui lòng liên hệ Quản trị viên để kích hoạt tài khoản.'
+              'Tài khoản của bạn CHƯA ĐƯỢC ADMIN DUYỆT. Vui lòng liên hệ Quản trị viên (0392887752) để kích hoạt tài khoản. '
             );
             return;
           }
