@@ -158,18 +158,18 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white flex flex-col justify-center items-center px-4 py-8 sm:px-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white flex flex-col justify-center items-center px-3 py-6 sm:px-6 sm:py-8 relative overflow-hidden font-sans">
       {/* Background ambient decorative glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-blue-600/20 blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-[320px] h-[320px] bg-indigo-500/15 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-slate-900/85 backdrop-blur-2xl border border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-full max-w-md bg-slate-900/85 backdrop-blur-2xl border border-slate-700/60 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-300">
 
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 mb-3.5">
-            <ShieldCheck className="w-7 h-7 text-white" />
+        <div className="text-center mb-5 sm:mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 mb-3 sm:mb-3.5">
+            <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             ClearMark

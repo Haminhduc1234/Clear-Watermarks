@@ -1,6 +1,6 @@
-# 🎬 Video Watermark Remover
+# 🎬 Video & Image Watermark Remover (ClearMark)
 
-A modern TypeScript + React web application for efficiently removing watermarks from video files in batch.
+A modern TypeScript + React web application for removing watermarks and inserting custom branding logos on both video and image files directly in the browser.
 
 [![Built with TypeScript](https://img.shields.io/badge/Built%20with-TypeScript-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
